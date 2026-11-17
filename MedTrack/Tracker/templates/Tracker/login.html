@@ -1,0 +1,17 @@
+{% extends "Tracker/base.html" %}
+{% block title %}Staff sign in · MedTrack{% endblock %}
+{% block content %}
+<section class="mx-auto max-w-md">
+  <p class="text-xs font-medium uppercase tracking-wide text-teal-700">Staff access</p>
+  <h1 class="mt-2 text-2xl font-semibold text-slate-900">Sign in to MedTrack</h1>
+  <p class="mt-1 text-sm text-slate-500">Sign in with your staff account to access patient medication records.</p>
+  <form class="mt-6 space-y-5 rounded-lg border border-slate-200 bg-white p-5" method="post">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="rounded bg-red-50 p-3 text-sm text-red-700">{{ form.non_field_errors }}</div>{% endif %}
+    <div><label class="mb-1 block text-sm font-medium text-slate-700" for="{{ form.username.id_for_label }}">Username</label><input class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" id="{{ form.username.id_for_label }}" name="{{ form.username.html_name }}" type="text" autocomplete="username" required></div>
+    <div><label class="mb-1 block text-sm font-medium text-slate-700" for="{{ form.password.id_for_label }}">Password</label><input class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" id="{{ form.password.id_for_label }}" name="{{ form.password.html_name }}" type="password" autocomplete="current-password" required></div>
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+    <div class="flex justify-end"><button class="rounded-md bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800" type="submit">Sign in</button></div>
+  </form>
+</section>
+{% endblock %}

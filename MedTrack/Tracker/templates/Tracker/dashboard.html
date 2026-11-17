@@ -1,0 +1,75 @@
+{% extends "Tracker/base.html" %}
+{% block title %}Patients · MedTrack{% endblock %}
+{% block content %}
+<section class="mb-8 flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Patients</h1>
+    <p class="mt-1 text-sm text-slate-500">Patient records and their medication plans.</p>
+  </div>
+  <a class="rounded-md bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800" href="{% url 'patient_create' %}">Add patient</a>
+</section>
+
+<section class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+  <div class="overflow-x-auto">
+    <table class="w-full min-w-[640px] divide-y divide-slate-200 text-left text-sm">
+      <thead class="bg-slate-50 text-xs font-medium uppercase tracking-wide text-slate-500">
+        <tr>
+          <th class="px-5 py-3">Patient</th>
+          <th class="px-5 py-3">Date of birth</th>
+          <th class="px-5 py-3">Gender</th>
+          <th class="px-5 py-3">Medications</th>
+          <th class="px-5 py-3 text-right">Details</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for patient in patients %}
+          <tr class="hover:bg-slate-50">
+            <td class="px-5 py-4 font-medium text-slate-900">{{ patient }}</td>
+            <td class="px-5 py-4 text-slate-600">{{ patient.date_of_birth|date:"M j, Y" }}</td>
+            <td class="px-5 py-4 text-slate-600">{{ patient.gender|default:"—" }}</td>
+            <td class="px-5 py-4 text-slate-600">{{ patient.medications.count }}</td>
+            <td class="px-5 py-4 text-right"><a class="font-medium text-teal-700 hover:text-teal-900" href="{% url 'patient_detail' patient.pk %}">View</a></td>
+          </tr>
+        {% empty %}
+          <tr><td class="px-5 py-12 text-center text-slate-500" colspan="5">No patients yet. Add a patient to get started.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="mt-12">
+  <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+    <div><h2 class="text-lg font-semibold text-slate-900">Medication rounds</h2><p class="mt-1 text-sm text-slate-500">Scheduled doses and administration status.</p></div>
+    <form class="flex items-center gap-2" method="get">
+      <label class="text-sm text-slate-600" for="round-date">Date</label>
+      <input class="rounded-md border border-slate-300 px-3 py-2 text-sm" id="round-date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+      <button class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50" type="submit">View</button>
+    </form>
+  </div>
+  <div class="mb-4 flex gap-4 text-sm text-slate-600">
+    <span><strong class="text-slate-900">{{ administered_count }}</strong> of <strong class="text-slate-900">{{ scheduled_count }}</strong> doses recorded</span>
+  </div>
+  <div class="grid gap-4 md:grid-cols-3">
+    {% for slot in slots %}
+      <article class="rounded-lg border border-slate-200 bg-white">
+        <h3 class="border-b border-slate-100 px-4 py-3 font-medium text-slate-800">{{ slot.title }}</h3>
+        <ul class="divide-y divide-slate-100">
+          {% for entry in slot.entries %}
+            <li class="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+              <div class="min-w-0"><p class="truncate font-medium text-slate-800">{{ entry.medication.name }}</p><p class="text-xs text-slate-500">{{ entry.patient }} · {{ entry.medication.dose }} · {% if entry.schedule.scheduled_time %}{{ entry.schedule.scheduled_time|time:"g:i A" }}{% else %}{{ slot.title }}{% endif %}</p></div>
+              {% if entry.administration %}
+                <span class="shrink-0 text-xs font-medium text-green-700">Given</span>
+              {% else %}
+                <form method="post" action="{% url 'administer_dose' entry.medication.id slot.key %}">{% csrf_token %}<input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}"><button class="shrink-0 rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50" type="submit">Mark given</button></form>
+              {% endif %}
+            </li>
+          {% empty %}
+            <li class="px-4 py-5 text-sm text-slate-500">No doses scheduled.</li>
+          {% endfor %}
+        </ul>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "Tracker/base.html" %}
+{% block title %}Add medication · MedTrack{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-2xl">
+  <a class="text-sm text-slate-500 hover:text-teal-700" href="{% if patient %}{% url 'patient_detail' patient.pk %}{% else %}{% url 'dashboard' %}{% endif %}">← Back</a>
+  <div class="mb-6 mt-5">
+    <h1 class="text-2xl font-semibold text-slate-900">Add medication</h1>
+    <p class="mt-1 text-sm text-slate-500">{% if patient %}For {{ patient }}{% else %}Choose a patient and set the medication schedule.{% endif %}</p>
+  </div>
+  {% if not form.fields.patient.queryset.exists %}
+    <div class="mb-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Add a patient before creating a medication plan. <a class="font-medium underline" href="{% url 'patient_create' %}">Add patient</a></div>
+  {% endif %}
+  <form class="space-y-5 rounded-lg border border-slate-200 bg-white p-5 sm:p-6" method="post">
+    {% csrf_token %}
+    {% for field in form %}
+      {% if field.name == "slots" %}
+        <fieldset>
+          <legend class="text-sm font-medium text-slate-700">{{ field.label }}</legend>
+          <p class="mb-3 mt-1 text-xs text-slate-500">Choose each daily round for this medication.</p>
+          <div class="flex flex-wrap gap-4">
+            {% for choice in field %}
+              <label class="flex items-center gap-2 text-sm text-slate-700">{{ choice.tag }}{{ choice.choice_label }}</label>
+            {% endfor %}
+          </div>
+          {% if field.errors %}<div class="mt-2 text-sm text-red-600">{{ field.errors }}</div>{% endif %}
+        </fieldset>
+      {% elif field.name == "patient" and patient %}
+        {{ field }}
+      {% elif field.name != "morning_time" and field.name != "afternoon_time" and field.name != "evening_time" %}
+        <div>
+          <label class="mb-1 block text-sm font-medium text-slate-700" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<p class="mt-1 text-xs text-slate-500">{{ field.help_text }}</p>{% endif %}
+          {% if field.errors %}<div class="mt-1 text-sm text-red-600">{{ field.errors }}</div>{% endif %}
+        </div>
+      {% endif %}
+    {% endfor %}
+    <div class="grid gap-4 border-t border-slate-100 pt-4 sm:grid-cols-3">
+      <div><label class="mb-1 block text-sm font-medium text-slate-700" for="{{ form.morning_time.id_for_label }}">Morning time</label>{{ form.morning_time }}</div>
+      <div><label class="mb-1 block text-sm font-medium text-slate-700" for="{{ form.afternoon_time.id_for_label }}">Afternoon time</label>{{ form.afternoon_time }}</div>
+      <div><label class="mb-1 block text-sm font-medium text-slate-700" for="{{ form.evening_time.id_for_label }}">Evening time</label>{{ form.evening_time }}</div>
+    </div>
+    <div class="flex justify-end gap-3 border-t border-slate-100 pt-4">
+      <a class="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50" href="{% if patient %}{% url 'patient_detail' patient.pk %}{% else %}{% url 'dashboard' %}{% endif %}">Cancel</a>
+      <button class="rounded-md bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50" type="submit" {% if not form.fields.patient.queryset.exists %}disabled{% endif %}>Save medication</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

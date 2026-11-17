@@ -1,0 +1,76 @@
+{% extends "Tracker/base.html" %}
+{% block title %}{{ patient }} · MedTrack{% endblock %}
+{% block content %}
+<a class="text-sm text-slate-500 hover:text-teal-700" href="{% url 'dashboard' %}">← Back to patients</a>
+<section class="mb-8 mt-5 flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Patient record</p>
+    <h1 class="mt-1 text-2xl font-semibold text-slate-900">{{ patient }}</h1>
+    <p class="mt-2 text-sm text-slate-600">Date of birth: {{ patient.date_of_birth|date:"M j, Y" }} <span class="mx-1 text-slate-300">·</span> {{ patient.gender|default:"Gender not recorded" }}</p>
+  </div>
+  <a class="rounded-md bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800" href="{% url 'patient_medication_create' patient.pk %}">Add medication</a>
+</section>
+
+<section class="mb-10 overflow-hidden rounded-lg border border-slate-200 bg-white">
+  <div class="border-b border-slate-200 px-5 py-4">
+    <h2 class="font-semibold text-slate-900">Assigned medications</h2>
+    <p class="mt-1 text-sm text-slate-500">{{ active_medications }} active on {{ selected_date|date:"M j, Y" }}</p>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full min-w-[700px] divide-y divide-slate-200 text-left text-sm">
+      <thead class="bg-slate-50 text-xs font-medium uppercase tracking-wide text-slate-500">
+        <tr><th class="px-5 py-3">Medication</th><th class="px-5 py-3">Dose</th><th class="px-5 py-3">How often</th><th class="px-5 py-3">Daily schedule</th><th class="px-5 py-3">Dates</th></tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for medication in patient.medications.all %}
+          <tr>
+            <td class="px-5 py-4 font-medium text-slate-900">{{ medication.name }}</td>
+            <td class="px-5 py-4 text-slate-600">{{ medication.dose }}</td>
+            <td class="px-5 py-4 text-slate-600">{{ medication.how_often|default:"—" }}</td>
+            <td class="px-5 py-4 text-slate-600">
+              {% for schedule in medication.schedules.all %}
+                <span class="inline-block rounded bg-slate-100 px-2 py-1 text-xs">{{ schedule.get_slot_display }}{% if schedule.scheduled_time %} · {{ schedule.scheduled_time|time:"g:i A" }}{% endif %}</span>
+              {% empty %}—{% endfor %}
+            </td>
+            <td class="px-5 py-4 text-slate-600">{{ medication.start_date|date:"M j, Y" }}{% if medication.end_date %} – {{ medication.end_date|date:"M j, Y" }}{% else %} – Ongoing{% endif %}</td>
+          </tr>
+        {% empty %}
+          <tr><td class="px-5 py-10 text-center text-slate-500" colspan="5">No medications assigned yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+    <div><h2 class="text-lg font-semibold text-slate-900">Medication rounds</h2><p class="mt-1 text-sm text-slate-500">Scheduled doses for this patient.</p></div>
+    <form class="flex items-center gap-2" method="get">
+      <label class="text-sm text-slate-600" for="round-date">Date</label>
+      <input class="rounded-md border border-slate-300 px-3 py-2 text-sm" id="round-date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+      <button class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50" type="submit">View</button>
+    </form>
+  </div>
+  <div class="grid gap-4 md:grid-cols-3">
+    {% for slot in rounds %}
+      <article class="rounded-lg border border-slate-200 bg-white">
+        <h3 class="border-b border-slate-100 px-4 py-3 font-medium text-slate-800">{{ slot.title }}</h3>
+        <ul class="divide-y divide-slate-100">
+          {% for entry in slot.entries %}
+            <li class="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+              <div><p class="font-medium text-slate-800">{{ entry.medication.name }}</p><p class="text-xs text-slate-500">{{ entry.medication.dose }}{% if entry.schedule.scheduled_time %} · {{ entry.schedule.scheduled_time|time:"g:i A" }}{% endif %}</p></div>
+              {% if entry.administration %}
+                <span class="text-xs font-medium text-green-700">Given{% if entry.administration.administered_by %} · {{ entry.administration.administered_by }}{% endif %}</span>
+              {% else %}
+                <form method="post" action="{% url 'administer_dose' entry.medication.id slot.key %}">{% csrf_token %}<input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}"><button class="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50" type="submit">Mark given</button></form>
+              {% endif %}
+            </li>
+          {% empty %}
+            <li class="px-4 py-5 text-sm text-slate-500">No doses scheduled.</li>
+          {% endfor %}
+        </ul>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
